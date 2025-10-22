@@ -3,7 +3,6 @@ import os
 import sys
 import tempfile
 import time
-from typing import Set
 from unittest.mock import patch
 
 import pytest
@@ -33,7 +32,6 @@ from ray.train.constants import (
 from ray.train.torch import TorchConfig
 from ray.util.placement_group import get_current_placement_group
 from ray.util.scheduling_strategies import PlacementGroupSchedulingStrategy
-from ray.util.state import list_actors
 
 
 @pytest.fixture
@@ -554,8 +552,12 @@ def test_neuron_core_accelerator_ids_sharing_disabled(
     assert results == expected_results
 
 
-def get_node_id_set() -> Set[str]:
-    return {a.node_id for a in list_actors()}
+def get_node_id_set():
+    node_id_set = set()
+    for actor_info in ray._private.state.actors().values():
+        node_id = actor_info["Address"]["NodeID"]
+        node_id_set.add(node_id)
+    return node_id_set
 
 
 @pytest.mark.parametrize("num_workers", [3, 4, 5])

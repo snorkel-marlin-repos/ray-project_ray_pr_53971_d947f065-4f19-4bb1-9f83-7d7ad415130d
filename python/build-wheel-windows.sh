@@ -82,10 +82,7 @@ install_ray() {
 uninstall_ray() {
   pip uninstall -y ray
 
-  # Cleanup generated thirdparty files.
-  python -c $'import shutil; import sys; \nfor d in sys.argv[1:]: shutil.rmtree(d, ignore_errors=True);' \
-    "${ROOT_DIR}/ray/thirdparty_files" \
-    "${ROOT_DIR}/ray/_private/runtime_env/agent/thirdparty_files"
+  python -s -c "import runpy, sys; runpy.run_path(sys.argv.pop(), run_name='__api__')" clean "${ROOT_DIR}"/setup.py
 }
 
 build_wheel_windows() {

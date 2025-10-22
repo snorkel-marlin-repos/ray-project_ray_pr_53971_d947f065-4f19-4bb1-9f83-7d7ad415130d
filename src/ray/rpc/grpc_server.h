@@ -103,9 +103,10 @@ class GrpcServer {
         port_(port),
         listen_to_localhost_only_(listen_to_localhost_only),
         cluster_id_(ClusterID::Nil()),
-        is_shutdown_(true),
+        is_closed_(true),
         num_threads_(num_threads),
-        keepalive_time_ms_(keepalive_time_ms) {
+        keepalive_time_ms_(keepalive_time_ms),
+        shutdown_(false) {
     Init();
   }
 
@@ -115,10 +116,7 @@ class GrpcServer {
   /// Initialize and run this server.
   void Run();
 
-  // Shutdown this server.
-  // NOTE: The method is idempotent but NOT THREAD-SAFE. Multiple sequential calls are
-  // safe (subsequent calls are no-ops). Concurrent calls will cause undefined behavior.
-  // Caller must ensure only one thread calls this method at a time.
+  // Shutdown this server
   void Shutdown();
 
   /// Get the port of this gRPC server.
@@ -166,8 +164,8 @@ class GrpcServer {
   const bool listen_to_localhost_only_;
   /// Token representing ID of this cluster.
   ClusterID cluster_id_;
-  /// Indicates whether this server is in shutdown state.
-  std::atomic<bool> is_shutdown_;
+  /// Indicates whether this server has been closed.
+  bool is_closed_;
   /// The `grpc::Service` objects which should be registered to `ServerBuilder`.
   std::vector<std::unique_ptr<grpc::Service>> grpc_services_;
   /// The `GrpcService`(defined below) objects which contain grpc::Service objects not in
@@ -187,6 +185,8 @@ class GrpcServer {
   /// gRPC server cannot get the ping response within the time, it triggers
   /// the watchdog timer fired error, which will close the connection.
   const int64_t keepalive_time_ms_;
+
+  std::atomic_bool shutdown_;
 };
 
 /// Base class that represents an abstract gRPC service.
